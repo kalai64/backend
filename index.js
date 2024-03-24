@@ -126,7 +126,8 @@ app.get('/allproducts',async (req,res)=>{
     let products = await Product.find({})
     console.log("All Products Fetched");
     res.send(products)
-}) 
+})
+
 
 // Schema creating for User model
 const Users = mongoose.model('Users',{
@@ -214,44 +215,6 @@ app.post('/login',async (req,res)=>{
     }
 })
 
-// Define fetchUser middleware first
-const fetchuser = async(req,res,next)=>{
-    const token = req.header('auth-token');
-    if (!token) {
-        return res.status(401).send({ errors: "Please authenticate using valid token" });
-    } else {
-        try {
-            const data = jwt.verify(token, 'secret_ecom');
-            req.user = data.user;
-            next();
-        } catch (error) {
-            res.status(401).send({ errors: "please authenticate valid token" });
-        }
-    }
-};
-
-// Now you can use fetchUser middleware in your routes
-app.put('/editprofile', fetchuser, async (req, res) => {
-    try {
-        const user = await Users.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found" });
-        }
-        // Update user fields based on the request data
-        if (req.body.name) user.name = req.body.name;
-        if (req.body.email) user.email = req.body.email;
-        if (req.body.address) user.address = req.body.address;
-        if (req.body.mobile) user.mobile = req.body.mobile;
-        if (req.body.password) user.password = req.body.password;
-        
-        await user.save(); // Save the updated user document
-        res.json({ success: true, message: "Profile updated successfully" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
-});
-
 
 // creating endpoint for newcollection data
 app.get('/newcollections',async(req,res)=>{
@@ -337,23 +300,6 @@ app.get('/userdetails', fetchUser, async (req, res) => {
 })
 
 
-app.get('/product/:id', async (req, res) => {
-    try {
-        const productId = req.params.id;
-        const product = await Product.findOne({ id: productId });
-        
-        if (!product) {
-            return res.status(404).json({ success: false, message: "Product not found" });
-        }
-
-        res.json(product);
-    } catch (error) {
-        console.error("Error retrieving product:", error);
-        res.status(500).json({ success: false, message: "Failed to retrieve product" });
-    }
-})
-
-  
  
   // Add this route handler in your Express server
 
@@ -374,8 +320,48 @@ app.post('/clearcart', fetchUser, async (req, res) => {
         console.error("Error clearing cart:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
-});
+})
 
+// Add this route handler in your Express server to fetch a single product by ID
+app.get('/product/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const product = await Product.findOne({ id: productId });
+        
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found" });
+        }
+
+        res.json(product);
+    } catch (error) {
+        console.error("Error retrieving product:", error);
+        res.status(500).json({ success: false, message: "Failed to retrieve product" });
+    }
+})
+
+// Add this route handler to update a product
+app.put('/updateproduct/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const { name, new_price, old_price } = req.body;
+
+        // Find the product by ID and update it
+        const product = await Product.findOneAndUpdate(
+            { id: productId },
+            { name, new_price, old_price },
+            { new: true }
+        );
+        
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found" });
+        }
+
+        res.json({ success: true, product });
+    } catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({ success: false, message: "Failed to update product" });
+    }
+})
 
   
 
