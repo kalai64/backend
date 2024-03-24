@@ -176,6 +176,7 @@ app.post('/signup',async (req,res)=>{
     const user = new Users({
         name:req.body.username,
         email:req.body.email,
+        role:req.body.role,
         address:req.body.address,
         password:req.body.password,
         mobile: req.body.mobile,
