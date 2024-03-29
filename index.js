@@ -3,7 +3,7 @@ const express = require("express")
 const app = express()
 const mongoose = require("mongoose")
 const jwt = require("jsonwebtoken")
-const cloudinary = require('cloudinary').v2
+const multer = require("multer")
 const path = require("path")
 const cors = require("cors");
 
@@ -21,26 +21,25 @@ app.get("/",(req,res)=>{
 
 //Image Storage Engine
 
-cloudinary.config({
-    cloud_name: 'dwvbuzkt5',
-    api_key: '849275846992185',
-    api_secret: 'pd-ahGZ4Qgc5xNX1M0NnVMhWHwo'
-});
+const storage = multer.diskStorage({
+    destination: './upload/images',
+    filename:(req,file,cb)=>{
+        return cb(null,`${file.filename}_${Date.now()}${path.extname(file.originalname)}`)
+    }
+})
+
+const upload = multer({storage:storage})
 
 
 //Creating Upload Endpoint for images
 
-app.post("/upload", async (req, res) => {
-    try {
-        const result = await cloudinary.uploader.upload(req.file.path);
-        res.json({
-            success: 1,
-            image_url: result.secure_url
-        });
-    } catch (error) {
-        console.error("Error uploading image:", error);
-        res.status(500).json({ success: 0, error: "Failed to upload image" });
-    }
+app.use('/images',express.static('upload/images'))
+
+app.post("/upload",upload.single('product'),(req,res)=>{
+    res.json({
+        success:1,
+        image_url:`https://backend-knm3.onrender.com/images/${req.file.filename}`
+    })
 })
 
 //Schema for creating products
